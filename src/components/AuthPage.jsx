@@ -1,23 +1,67 @@
 import { useState } from 'react';
 import { MessageCircle, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 
+
 export function AuthPage({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e) => {
+     const API_URL = 'http://localhost:5130/api/users';
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Здесь будет логика авторизации
-    console.log('Форма отправлена:', formData);
-    onAuthSuccess();
+    setError('');
+    setLoading(true);
+    
+    try {
+    const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(isLogin ? {
+          email: formData.email || formData.username,
+          password: formData.password
+        } : {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Произошла ошибка');
+      }
+      
+      if (isLogin) {
+        // Сохраняем данные пользователя
+        localStorage.setItem('user', JSON.stringify(data));
+        onAuthSuccess();
+      } else {
+        alert('Регистрация успешна! Теперь вы можете войти.');
+        setIsLogin(true);
+        setFormData({ username: '', email: '', password: '' });
+      }
+    } catch (err) {
+      setError(err.message || 'Произошла ошибка');
+      console.error('Auth error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleChange = (e) => {
+    const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
