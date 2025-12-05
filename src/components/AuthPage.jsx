@@ -13,7 +13,7 @@ export function AuthPage({ onAuthSuccess }) {
     password: '',
   });
 
-     const API_URL = 'http://localhost:5130/api/users';
+    const API_URL = 'http://localhost:5234/api/users';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,29 +23,35 @@ export function AuthPage({ onAuthSuccess }) {
     try {
     const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(isLogin ? {
-          email: formData.email || formData.username,
-          password: formData.password
-        } : {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password
-        })
-      });
-      
-      const data = await response.json();
+          const requestBody = isLogin ? {
+      username: formData.username, 
+      password: formData.password
+    } : {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password
+    };
+    
+    console.log('Отправляемые данные:', requestBody);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('Статус ответа:', response.status);
+    
+    const data = await response.json();
+    console.log('Данные ответа:', data);
       
       if (!response.ok) {
         throw new Error(data.message || 'Произошла ошибка');
       }
       
       if (isLogin) {
-        // Сохраняем данные пользователя
         localStorage.setItem('user', JSON.stringify(data));
         onAuthSuccess();
       } else {

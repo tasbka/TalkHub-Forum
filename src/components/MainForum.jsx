@@ -3,11 +3,15 @@ import { ForumHeader } from './ForumHeader';
 import { ForumCategories } from './ForumCategories';  
 import { ForumTopic } from './ForumTopic';            
 import { ForumStats } from './ForumStats';            
-import { ActiveUsers } from './ActiveUsers';          
+import { ActiveUsers } from './ActiveUsers';  
+import { CreateTopicPage } from './CreateTopicPage';
 import { Button } from './ui/button';                 
 import { Plus } from 'lucide-react';
+import { useState } from 'react';
 
-const topics = [
+
+
+const initialTopics = [
   {
     id: 1,
     title: 'Как правильно использовать REST API аутентификацию?',
@@ -21,10 +25,39 @@ const topics = [
     isSolved: true,
     avatar: '👩‍💻',
   },
-  // ... остальные темы из вашего исходного кода
 ];
 
 function MainForum({ onLogout }) {
+
+   const [topics, setTopics] = useState(initialTopics);
+  const [showCreateTopic, setShowCreateTopic] = useState(false); // Состояние для страницы создания
+
+  const handleCreateTopic = (newTopic) => {
+    const topic = {
+      id: topics.length + 1,
+      ...newTopic,
+      author: 'Вы', 
+      replies: 0,
+      views: 0,
+      likes: 0,
+      timestamp: 'только что',
+      isPinned: false,
+      isSolved: false,
+      avatar: '👤',
+    };
+    
+    setTopics([topic, ...topics]); // тему в начало
+    setShowCreateTopic(false); // на главную
+  };
+  if (showCreateTopic) {
+    return (
+      <CreateTopicPage
+        onBack={() => setShowCreateTopic(false)}
+        onSubmit={handleCreateTopic}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
       <ForumHeader onLogout={onLogout} />
@@ -43,7 +76,8 @@ function MainForum({ onLogout }) {
                 <h2 className="text-primary">Последние темы</h2>
                 <p className="text-muted-foreground">Обсуждение web API и разработки</p>
               </div>
-              <Button className="bg-gradient-to-r from-purple-300 via-pink-300 to-purple-400 hover:from-purple-400 hover:via-pink-400 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all">
+              <Button className="bg-gradient-to-r from-purple-300 via-pink-300 to-purple-400 hover:from-purple-400 hover:via-pink-400 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+               onClick={() => setShowCreateTopic(true)}>
                 <Plus className="h-5 w-5 mr-2" strokeWidth={2.5} />
                 Создать тему
               </Button>

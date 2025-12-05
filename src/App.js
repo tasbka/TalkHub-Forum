@@ -1,4 +1,4 @@
-// src/App.js
+
 import { useState } from 'react';
 import './styles/globals.css';
 import { AuthPage } from './components/AuthPage';
