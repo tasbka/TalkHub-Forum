@@ -1,7 +1,7 @@
 // src/api/client.js
-import axios from 'axios';
+/*import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api'; // Или ваш порт ASP.NET
+const API_BASE_URL = 'http://localhost:5234/api'; // Или ваш порт ASP.NET
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -10,4 +10,4 @@ const apiClient = axios.create({
     },
 });
 
-export default apiClient;
+export default apiClient;*/

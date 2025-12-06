@@ -1,22 +1,37 @@
-import apiClient from '../api/client';
+import simpleClient from '../api/simpleClient';
 
 const authService = {
     register: async (userData) => {
         try {
-            const response = await apiClient.post('/users/register', userData);
+            const response = await simpleClient.post('/users/register', userData);
+            localStorage.setItem('user', JSON.stringify(response.data));
             return response.data;
         } catch (error) {
-            throw error.response?.data || error;
+            throw error;
         }
     },
-    
-    login: async (credentials) => {
+
+   login: async (credentials) => {
         try {
-            const response = await apiClient.post('/users/login', credentials);
+            const response = await simpleClient.post('/users/login', credentials);
+            localStorage.setItem('user', JSON.stringify(response.data));
             return response.data;
         } catch (error) {
-            throw error.response?.data || error;
+            throw error;
         }
+    },
+
+    logout: () => {
+        localStorage.removeItem('user');
+    },
+    
+    getCurrentUser: () => {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
+
+    isAuthenticated: () => {
+        return !!localStorage.getItem('user');
     }
 };
 
