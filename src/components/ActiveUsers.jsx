@@ -1,24 +1,90 @@
+import React, { useState, useEffect } from 'react';
+import statsService from '../services/statsService';
+import { Crown, Award, Star, User as UserIcon } from 'lucide-react';
+
 export function ActiveUsers() {
-  const users = [
-    { name: 'Александра К.', role: '👩‍💻 Модератор' },
-    { name: 'Иван М.', role: '👨‍💼 Разработчик' },
-    { name: 'Мария С.', role: '🧑‍💻 Админ' },
-    { name: 'Дмитрий П.', role: '👨‍🔬 Пользователь' },
-  ];
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadActiveUsers();
+  }, []);
+
+  const loadActiveUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await statsService.getActiveUsers(4);
+      setUsers(data);
+    } catch (error) {
+      console.error('Error loading active users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRoleIcon = (role, avatar) => {
+    if (avatar) return <span className="text-xl">{avatar}</span>;
+    
+    switch(role.toLowerCase()) {
+      case 'админ': return <Crown className="h-5 w-5 text-yellow-600" />;
+      case 'мудрец': return <Award className="h-5 w-5 text-purple-600" />;
+      case 'эксперт': return <Star className="h-5 w-5 text-blue-600" />;
+      default: return <UserIcon className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Активные пользователи</h3>
+        <div className="animate-pulse space-y-3">
+          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-12 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border border-border">
-      <h3 className="text-lg font-medium mb-4">Активные пользователи</h3>
-      <div className="space-y-3">
-        {users.map((user, index) => (
-          <div key={index} className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">
-              {user.name.charAt(0)}
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <h3 className="text-lg font-semibold text-primary mb-6">Активные пользователи</h3>
+      
+      <div className="space-y-4">
+        {users.map((user) => (
+          <div key={user.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center">
+                {getRoleIcon(user.role, user.avatar)}
+              </div>
             </div>
-            <div>
-              <div className="font-medium text-sm">{user.name}</div>
-              <div className="text-xs text-muted-foreground">{user.role}</div>
+            
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate">{user.username}</p>
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                  user.role === 'Админ' ? 'bg-yellow-100 text-yellow-800' :
+                  user.role === 'Мудрец' ? 'bg-purple-100 text-purple-800' :
+                  user.role === 'Эксперт' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {user.role}
+                </span>
+                {user.postCount > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {user.postCount} сообщ.
+                  </span>
+                )}
+              </div>
             </div>
+            
+            {user.reputation > 0 && (
+              <div className="flex-shrink-0">
+                <span className="text-sm font-semibold text-purple-600">
+                  +{user.reputation}
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>
