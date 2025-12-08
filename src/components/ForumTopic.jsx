@@ -9,8 +9,20 @@ export function ForumTopic({
   timestamp,
   isPinned,
   isSolved,
-  avatar
+  avatar,
+   onCommentsClick
 }) {
+   const handleCommentsClick = (e) => {
+    e.stopPropagation(); // Останавливаем всплытие события
+    if (onCommentsClick) {
+      onCommentsClick({ 
+        id, title, author, category, views, timestamp, 
+        isPinned, isSolved, avatar, replies 
+      });
+    }
+  };
+  const handleTopicClick = () => {
+  }
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-border">
       <div className="flex items-start gap-3">
@@ -43,7 +55,14 @@ export function ForumTopic({
               <span>🕒 {timestamp}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span>💬 {replies}</span>
+            <button 
+                onClick={handleCommentsClick}
+                className="flex items-center gap-1 hover:text-purple-700 transition-colors focus:outline-none"
+                title="Перейти к комментариям"
+              >
+                <span className="text-lg">💬</span>
+                <span>{replies}</span>
+              </button>
               <span>👁️ {views}</span>
               <span>❤️ {likes}</span>
             </div>

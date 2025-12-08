@@ -4,6 +4,7 @@ import { ForumCategories } from './ForumCategories';
 import { ForumTopic } from './ForumTopic';            
 import { ForumStats } from './ForumStats';            
 import { ActiveUsers } from './ActiveUsers';  
+import { TopicDetailPage } from './TopicDetailPage';
 import { CreateTopicPage } from './CreateTopicPage';
 import { Button } from './ui/button';                 
 import { Plus } from 'lucide-react';
@@ -15,7 +16,9 @@ function MainForum({ onLogout }) {
 
     const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateTopic, setShowCreateTopic] = useState(false); // Состояние для страницы создания
+  const [showCreateTopic, setShowCreateTopic] = useState(false);
+ const [selectedTopic, setSelectedTopic] = useState(null);
+  const [showTopicDetail, setShowTopicDetail] = useState(false); 
 
    useEffect(() => {
     loadTopics();
@@ -28,7 +31,6 @@ function MainForum({ onLogout }) {
       
       console.log('Загруженные темы:', notes);
       
-      // Преобразуем в нужный формат
       const formattedTopics = notes.map(note => ({
         id: note.id,
         title: note.title,
@@ -63,10 +65,10 @@ function MainForum({ onLogout }) {
       console.log('Создание темы:', newTopicData);
       await noteService.createNote(newTopicData);
       
-      // Перезагружаем список
+      // Перезагрузкка
       await loadTopics();
       
-      // Возвращаемся на главную
+      // на главную
       setShowCreateTopic(false);
       
     } catch (error) {
@@ -74,6 +76,56 @@ function MainForum({ onLogout }) {
       alert('Не удалось создать тему: ' + (error.message || error));
     }
   };
+
+  //  клик по всей теме
+  const handleTopicClick = (topic) => {
+    setSelectedTopic(topic);
+    setShowTopicDetail(true);
+  };
+  
+  const handleCommentsClick = (topic) => {
+    setSelectedTopic(topic);
+    setShowTopicDetail(true);
+  };
+
+const handleAddComment = async (comment) => {
+  if (selectedTopic) {
+    // счетчик комментариев у темы
+    const updatedTopics = topics.map(t => 
+      t.id === selectedTopic.id 
+        ? { ...t, replies: t.replies + 1 }
+        : t
+    );
+    setTopics(updatedTopics);
+    
+    // Обновить тему
+    setSelectedTopic({
+      ...selectedTopic,
+      replies: selectedTopic.replies + 1
+    });
+  }
+};
+
+// TopicDetailPage
+if (showTopicDetail && selectedTopic) {
+  return (
+    <TopicDetailPage
+      topic={selectedTopic}
+      onBack={() => setShowTopicDetail(false)}
+      onAddComment={handleAddComment}
+      onLogout={onLogout} 
+    />
+  );
+}
+  if (showTopicDetail && selectedTopic) {
+    return (
+      <TopicDetailPage
+        topic={selectedTopic}
+        onBack={() => setShowTopicDetail(false)}
+        onAddComment={handleAddComment}
+      />
+    );
+  }
 
   if (showCreateTopic) {
     return (
@@ -111,8 +163,17 @@ function MainForum({ onLogout }) {
             </div>
             
             <div className="space-y-4">
-              {topics.map((topic) => (
-                <ForumTopic key={topic.id} {...topic} />
+            {topics.map((topic) => (
+                <div 
+                  key={topic.id} 
+                  onClick={() => handleTopicClick(topic)}
+                  className="cursor-pointer hover:scale-[1.01] transition-transform"
+                >
+                  <ForumTopic 
+                    {...topic}
+                    onCommentsClick={handleCommentsClick} // обработчик
+                  />
+                </div>
               ))}
             </div>
           </div>
