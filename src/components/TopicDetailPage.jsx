@@ -4,9 +4,8 @@ import { ArrowLeft, Send, Pin, Eye, MessageSquare, AlertCircle } from 'lucide-re
 import { Comment } from './Comment';
 import { ForumHeader } from './ForumHeader';
 import commentService from '../services/commentService';
-import authService from '../services/authService';
 
-export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
+export function TopicDetailPage({ topic, onBack, onAddComment, onLogout, currentUser }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -14,13 +13,6 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
   const [replyContent, setReplyContent] = useState('');
   const [authError, setAuthError] = useState('');
   
-  //  текущий пользователь
-  const getCurrentUser = () => {
-    return authService.getCurrentUser();
-  };
-  
-  const currentUser = getCurrentUser();
-
   useEffect(() => {
     loadComments();
   }, [topic.id]);
@@ -52,7 +44,15 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
     
     if (!newComment.trim()) return;
     
-    if (!handleAuthCheck()) return;
+    if (!currentUser) { // Проверяем currentUser из пропсов
+      setAuthError('Для этого действия необходимо войти в аккаунт');
+      return;
+    }
+
+    console.log('Текущий пользователь:', currentUser);
+    console.log('ID пользователя:', currentUser?.id);
+    console.log('Имя пользователя:', currentUser?.username);
+
 
     try {
       const commentData = {
@@ -64,6 +64,7 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
         parentCommentId: null
       };
 
+       console.log('Отправляемые данные комментария:', commentData);
       const createdComment = await commentService.createComment(commentData);
       
       //новый комментарий в список
@@ -207,8 +208,8 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
-        <ForumHeader onLogout={onLogout} />
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
+        <ForumHeader onLogout={onLogout} currentUser={currentUser} /> {/* Передаем currentUser */}
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="text-purple-600">Загрузка комментариев...</div>
         </div>
@@ -218,7 +219,7 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
-      <ForumHeader onLogout={onLogout} />
+      <ForumHeader onLogout={onLogout} currentUser={currentUser} />
       
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button

@@ -15,15 +15,15 @@ export function AuthPage({ onAuthSuccess }) {
 
     const API_URL = 'http://localhost:5234/api/users';
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    
-    try {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  
+  try {
     const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
-      
-          const requestBody = isLogin ? {
+    
+    const requestBody = isLogin ? {
       username: formData.username, 
       password: formData.password
     } : {
@@ -44,27 +44,31 @@ export function AuthPage({ onAuthSuccess }) {
     
     console.log('Статус ответа:', response.status);
     
-    const data = await response.json();
-    console.log('Данные ответа:', data);
+    const result = await response.json();
+    console.log('Полный ответ от сервера при входе:', result);
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Произошла ошибка');
-      }
-      
-      if (isLogin) {
-        localStorage.setItem('user', JSON.stringify(data));
-        onAuthSuccess();
-      } else {
-        alert('Регистрация успешна! Теперь вы можете войти.');
-        setIsLogin(true);
-        setFormData({ username: '', email: '', password: '' });
-      }
-    } catch (err) {
-      setError(err.message || 'Произошла ошибка');
-      console.error('Auth error:', err);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(result.message || 'Произошла ошибка');
     }
+    
+    if (isLogin) {
+      // Сохраняем только data из ответа
+      localStorage.setItem('user', JSON.stringify(result.data));
+      console.log('Сохраненный пользователь в localStorage:', result.data);
+      
+      // Вызываем onAuthSuccess
+      onAuthSuccess();
+    } else {
+      alert('Регистрация успешна! Теперь вы можете войти.');
+      setIsLogin(true);
+      setFormData({ username: '', email: '', password: '' });
+    }
+  } catch (err) {
+    setError(err.message || 'Произошла ошибка');
+    console.error('Auth error:', err);
+  } finally {
+    setLoading(false);
+  }
   };
 
     const handleChange = (e) => {

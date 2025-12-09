@@ -1,7 +1,8 @@
+// src/components/CreateTopicPage.jsx
 import { useState } from 'react';
 import { ArrowLeft, Send, Code, MessageSquare, HelpCircle, Lightbulb } from 'lucide-react';
 
-export function CreateTopicPage({ onBack, onSubmit }) {
+export function CreateTopicPage({ onBack, onSubmit, currentUser }) { // Добавлен currentUser
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -18,7 +19,13 @@ export function CreateTopicPage({ onBack, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.title && formData.content && formData.category) {
-      onSubmit(formData);
+      // Добавляем информацию о пользователе
+      const topicData = {
+        ...formData,
+        authorId: currentUser?.id,
+        author: currentUser?.username
+      };
+      onSubmit(topicData);
     }
   };
 
@@ -77,33 +84,39 @@ export function CreateTopicPage({ onBack, onSubmit }) {
               Выберите категорию
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {categories.map((category) => {
-                const Icon = category.icon;
-                const isSelected = formData.category === category.name;
-                return (
-                  <button
-                    key={category.name}
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, category: category.name })
-                    }
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-purple-300 via-pink-200 to-purple-300 border-purple-400 shadow-md scale-[1.02]'
-                        : 'bg-white/50 border-purple-200 hover:border-purple-300 hover:shadow-md hover:scale-[1.01]'
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md`}
+              {categories && categories.length > 0 ? (
+                categories.map((category) => {
+                  const Icon = category.icon;
+                  const isSelected = formData.category === category.name;
+                  return (
+                    <button
+                      key={category.name}
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, category: category.name })
+                      }
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-purple-300 via-pink-200 to-purple-300 border-purple-400 shadow-md scale-[1.02]'
+                          : 'bg-white/50 border-purple-200 hover:border-purple-300 hover:shadow-md hover:scale-[1.01]'
+                      }`}
                     >
-                      <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
-                    </div>
-                    <span className={isSelected ? 'text-purple-700' : 'text-gray-700'}>
-                      {category.name}
-                    </span>
-                  </button>
-                );
-              })}
+                      <div
+                        className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md`}
+                      >
+                        <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+                      </div>
+                      <span className={isSelected ? 'text-purple-700' : 'text-gray-700'}>
+                        {category.name}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="col-span-2 text-center py-4 text-gray-500">
+                  Категории не загружены
+                </div>
+              )}
             </div>
             {!formData.category && (
               <p className="text-xs text-gray-500 mt-3">

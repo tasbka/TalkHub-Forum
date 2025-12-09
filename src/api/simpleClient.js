@@ -1,3 +1,4 @@
+// src/api/simpleClient.js
 const API_BASE_URL = 'http://localhost:5234/api';
 
 const simpleClient = {
@@ -11,13 +12,13 @@ const simpleClient = {
         }
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error ${response.status}`);
+        throw new Error(result.message || `HTTP error ${response.status}`);
       }
       
-      return { data };
+      return result; // Возвращаем полный ответ {success, message, data}
     } catch (error) {
       console.error(`GET ${endpoint} error:`, error);
       throw error;
@@ -35,13 +36,13 @@ const simpleClient = {
         body: JSON.stringify(body)
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error ${response.status}`);
+        throw new Error(result.message || `HTTP error ${response.status}`);
       }
       
-      return { data };
+      return result; // Возвращаем полный ответ {success, message, data}
     } catch (error) {
       console.error(`POST ${endpoint} error:`, error);
       throw error;
@@ -58,13 +59,13 @@ const simpleClient = {
         body: JSON.stringify(body)
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error ${response.status}`);
+        throw new Error(result.message || `HTTP error ${response.status}`);
       }
       
-      return { data };
+      return result;
     } catch (error) {
       console.error(`PUT ${endpoint} error:`, error);
       throw error;
@@ -77,13 +78,13 @@ const simpleClient = {
         method: 'DELETE'
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error ${response.status}`);
+        throw new Error(result.message || `HTTP error ${response.status}`);
       }
       
-      return { data };
+      return result;
     } catch (error) {
       console.error(`DELETE ${endpoint} error:`, error);
       throw error;

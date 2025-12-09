@@ -7,7 +7,19 @@ const noteService = {
         try {
             const response = await simpleClient.get('/note');
             console.log('Ответ от сервера (заметки):', response.data);
-            return response.data.data || [];
+            const data = response?.data?.data || response?.data || response;
+
+             if (Array.isArray(data)) {
+                return data;
+            }
+            
+            // Если ответ не массив, возможно это объект с notes внутри
+            if (data && typeof data === 'object') {
+                const notesArray = data.notes || data.items || data.data || [];
+                if (Array.isArray(notesArray)) {
+                    return notesArray;
+                }
+            }
         } catch (error) {
             console.error('Ошибка загрузки заметок:', error);
             return [];
