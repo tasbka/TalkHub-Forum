@@ -63,7 +63,7 @@ export function ForumTopic({
                 <span className="text-lg">💬</span>
                 <span>{replies}</span>
               </button>
-              <span>👁️ {views}</span>
+
               <span>❤️ {likes}</span>
             </div>
           </div>

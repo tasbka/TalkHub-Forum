@@ -7,19 +7,89 @@ const noteService = {
         try {
             const response = await simpleClient.get('/note');
             console.log('Ответ от сервера (заметки):', response.data);
-            const data = response?.data?.data || response?.data || response;
 
-             if (Array.isArray(data)) {
-                return data;
+            const responseData = response?.data;
+            
+            if (!responseData) {
+                console.error('Пустой ответ от сервера');
+                return [];
             }
             
             // Если ответ не массив, возможно это объект с notes внутри
-            if (data && typeof data === 'object') {
-                const notesArray = data.notes || data.items || data.data || [];
-                if (Array.isArray(notesArray)) {
-                    return notesArray;
-                }
+          if (responseData.success && Array.isArray(responseData.data)) {
+                console.log('Найдены заметки в формате success/data:', responseData.data.length);
+                
+                // Преобразуем в нужный формат для фронтенда
+                const formattedNotes = responseData.data.map(note => {
+                    console.log('Обработка заметки:', {
+                        id: note.id,
+                        title: note.title,
+                        replies: note.replies, // ← ЭТО CommentCount!
+                        commentCount: note.commentCount, // Проверим разные варианты
+                        rawNote: note
+                    });
+                    
+                    return {
+                        id: note.id,
+                        title: note.title,
+                        content: note.content || '',
+                        category: note.category || 'Без категории',
+                        author: note.author || 'Аноним',
+                        authorId: note.authorId,
+                        categoryId: note.categoryId,
+                        // Берем replies из ответа сервера (это CommentCount)
+                        replies: note.replies || note.commentCount || note.CommentCount || 0,
+                        views: note.views || 0,
+                        likes: note.likes || note.likeCount || 0,
+                        timestamp: note.timestamp || note.created || 'Недавно',
+                        isPinned: note.isPinned || false,
+                        isSolved: note.isSolved || false,
+                    };
+                });
+                
+                return formattedNotes;
             }
+            
+            // Структура 2: Прямой массив [массив]
+            if (Array.isArray(responseData)) {
+                console.log('Найден прямой массив заметок:', responseData.length);
+                return responseData.map(note => ({
+                    id: note.id || note.Id,
+                    title: note.title || note.Title,
+                    content: note.content || note.Content || '',
+                    category: note.category || note.CategoryName || 'Без категории',
+                    author: note.author || note.AuthorName || 'Аноним',
+                    authorId: note.authorId || note.AuthorId,
+                    replies: note.replies || note.commentCount || note.CommentCount || 0,
+                    views: note.views || note.ViewCount || 0,
+                    likes: note.likes || note.likeCount || note.LikeCount || 0,
+                    timestamp: note.timestamp || note.created || note.Created || 'Недавно',
+                    isPinned: note.isPinned || note.IsPinned || false,
+                    isSolved: note.isSolved || note.IsSolved || false,
+                }));
+            }
+            
+            // Структура 3: Объект с полем data/notes
+            if (responseData.data && Array.isArray(responseData.data)) {
+                return responseData.data.map(note => ({
+                   id: note.id || note.Id,
+                    title: note.title || note.Title,
+                    content: note.content || note.Content || '',
+                    category: note.category || note.CategoryName || 'Без категории',
+                    author: note.author || note.AuthorName || 'Аноним',
+                    authorId: note.authorId || note.AuthorId,
+                    replies: note.replies || note.commentCount || note.CommentCount || 0,
+                    views: note.views || note.ViewCount || 0,
+                    likes: note.likes || note.likeCount || note.LikeCount || 0,
+                    timestamp: note.timestamp || note.created || note.Created || 'Недавно',
+                    isPinned: note.isPinned || note.IsPinned || false,
+                    isSolved: note.isSolved || note.IsSolved || false,
+                }));
+            }
+            
+            console.error('Неизвестный формат ответа:', responseData);
+            return [];
+            
         } catch (error) {
             console.error('Ошибка загрузки заметок:', error);
             return [];

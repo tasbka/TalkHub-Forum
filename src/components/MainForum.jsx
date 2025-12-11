@@ -10,6 +10,7 @@ import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import noteService from '../services/noteService';
+import { UserProfilePage } from './UserProfilePage';
 
 
 function MainForum({ onLogout, currentUser }) {
@@ -18,6 +19,7 @@ function MainForum({ onLogout, currentUser }) {
   const [showCreateTopic, setShowCreateTopic] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [showTopicDetail, setShowTopicDetail] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
    useEffect(() => {
     loadTopics();
@@ -163,6 +165,22 @@ const formatTimestamp = (timestamp) => {
     setShowTopicDetail(true);
   };
 
+ const handleProfileClick = () => {
+    console.log('Клик по профилю, пользователь:', currentUser);
+    setShowUserProfile(true);
+  };
+
+  // Проверка на показ страницы профиля - ДОБАВЬТЕ этот блок
+  if (showUserProfile) {
+    return (
+      <UserProfilePage
+        username={currentUser?.username || 'Пользователь'}
+        onBack={() => setShowUserProfile(false)}
+      />
+    );
+  }
+
+
 const handleAddComment = async (comment) => {
   if (selectedTopic) {
     // счетчик комментариев у темы
@@ -181,6 +199,7 @@ const handleAddComment = async (comment) => {
   }
 };
 
+ 
 // TopicDetailPage
 if (showTopicDetail && selectedTopic) {
   return (
@@ -215,7 +234,7 @@ if (showTopicDetail && selectedTopic) {
 
   return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
-      <ForumHeader onLogout={onLogout} currentUser={currentUser} /> {/* Передаем currentUser */}
+      <ForumHeader onLogout={onLogout} currentUser={currentUser}  onProfileClick={handleProfileClick} /> {/* Передаем currentUser */}
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-12 gap-6">
