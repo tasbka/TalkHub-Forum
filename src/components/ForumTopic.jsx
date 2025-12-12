@@ -1,3 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import likeService from '../services/likeService';
+
+
 export function ForumTopic({
   id,
   title,
@@ -5,13 +9,101 @@ export function ForumTopic({
   category,
   replies,
   views,
-  likes,
+  likes: initialLikes,
   timestamp,
   isPinned,
   isSolved,
   avatar,
-   onCommentsClick
+   onCommentsClick,
+    currentUserId
 }) {
+
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Проверяем, лайкнул ли текущий пользователь тему
+    useEffect(() => {
+    if (currentUserId && id) {
+      // Проверяем сервер
+      checkIfLiked();
+      
+      // А также проверяем localStorage для мгновенного отображения
+      const cachedLikeCount = localStorage.getItem(`topic_${id}_likes`);
+      const cachedIsLiked = localStorage.getItem(`topic_${id}_user_${currentUserId}_liked`);
+      
+      if (cachedLikeCount) {
+        setLikeCount(parseInt(cachedLikeCount));
+      }
+      if (cachedIsLiked) {
+        setIsLiked(cachedIsLiked === 'true');
+      }
+    }
+  }, [id, currentUserId]);
+
+  const checkIfLiked = async () => {
+  if (!currentUserId) return;
+  
+  try {
+    const response = await likeService.checkIfLiked(id, currentUserId);
+    
+    // Обрабатываем оба формата
+    if (response.success !== undefined) {
+      // Новый формат
+      if (response.success) {
+        setIsLiked(response.data?.isLiked ?? false);
+      }
+    } else {
+      // Старый формат
+      setIsLiked(response.isLiked ?? false);
+    }
+  } catch (error) {
+    console.error('Error checking like status:', error);
+  }
+};
+
+const handleLikeToggle = async (e) => {
+  e.stopPropagation();
+  
+  if (!currentUserId) {
+    alert('Для оценки темы необходимо авторизоваться');
+    return;
+  }
+
+  if (!id) {
+    console.error('Note ID is missing');
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const response = await likeService.toggleLike(id, currentUserId);
+    
+    console.log('Full toggle response:', response);
+    if (response.success !== undefined) {
+      const isLikedNow = response.data.isLikedByCurrentUser;
+        const newLikeCount = response.data.likeCount;
+        
+        setIsLiked(isLikedNow);
+        setLikeCount(newLikeCount);
+        
+        // Сохраняем в localStorage для кеширования
+        localStorage.setItem(`topic_${id}_likes`, newLikeCount.toString());
+        localStorage.setItem(`topic_${id}_user_${currentUserId}_liked`, isLikedNow.toString());
+        
+    } else {
+      // Старый формат (прямой DTO)
+      setIsLiked(response.isLikedByCurrentUser ?? response.IsLikedByCurrentUser ?? false);
+      setLikeCount(response.likeCount ?? response.LikeCount ?? 0);
+      console.log('Used old format response');
+    }
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    alert('Ошибка соединения с сервером');
+  } finally {
+    setIsLoading(false);
+  }
+};
    const handleCommentsClick = (e) => {
     e.stopPropagation(); // Останавливаем всплытие события
     if (onCommentsClick) {
@@ -21,6 +113,7 @@ export function ForumTopic({
       });
     }
   };
+
   const handleTopicClick = () => {
   }
   return (
@@ -64,7 +157,22 @@ export function ForumTopic({
                 <span>{replies}</span>
               </button>
 
-              <span>❤️ {likes}</span>
+             <button 
+                onClick={handleLikeToggle}
+                disabled={isLoading || !currentUserId}
+                className={`flex items-center gap-1 transition-colors focus:outline-none ${
+                  isLiked 
+                    ? 'text-red-500 hover:text-red-600' 
+                    : 'hover:text-red-400'
+                } ${!currentUserId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={currentUserId ? "Оценить тему" : "Авторизуйтесь для оценки"}
+              >
+                <span className="text-lg">
+                  {isLiked ? '❤️' : '🤍'}
+                </span>
+                <span>{likeCount}</span>
+                {isLoading && <span className="ml-1 text-xs">...</span>}
+              </button>
             </div>
           </div>
         </div>

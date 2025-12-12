@@ -3,8 +3,11 @@ const API_BASE_URL = 'http://localhost:5234/api';
 
 const simpleClient = {
   get: async (endpoint) => {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`GET: ${url}`);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -12,22 +15,39 @@ const simpleClient = {
         }
       });
       
-      const result = await response.json();
+      console.log(`GET response status: ${response.status}`);
+      
+      // Если ответ пустой
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return { success: true, data: null };
+      }
+      
+      const text = await response.text();
+      console.log(`GET response text: ${text}`);
+      
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+      
+      const result = JSON.parse(text);
       
       if (!response.ok) {
         throw new Error(result.message || `HTTP error ${response.status}`);
       }
       
-      return result; // Возвращаем полный ответ {success, message, data}
+      return result;
     } catch (error) {
-      console.error(`GET ${endpoint} error:`, error);
+      console.error(`GET ${url} error:`, error);
       throw error;
     }
   },
   
   post: async (endpoint, body) => {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`POST: ${url}`, body);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,30 +56,16 @@ const simpleClient = {
         body: JSON.stringify(body)
       });
       
-      const result = await response.json();
+      console.log(`POST response status: ${response.status}`);
       
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP error ${response.status}`);
+      const text = await response.text();
+      console.log(`POST response text: ${text}`);
+      
+      if (!text) {
+        throw new Error('Empty response from server');
       }
       
-      return result; // Возвращаем полный ответ {success, message, data}
-    } catch (error) {
-      console.error(`POST ${endpoint} error:`, error);
-      throw error;
-    }
-  },
-  
-  put: async (endpoint, body) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      
-      const result = await response.json();
+      const result = JSON.parse(text);
       
       if (!response.ok) {
         throw new Error(result.message || `HTTP error ${response.status}`);
@@ -67,16 +73,26 @@ const simpleClient = {
       
       return result;
     } catch (error) {
-      console.error(`PUT ${endpoint} error:`, error);
+      console.error(`POST ${url} error:`, error);
       throw error;
     }
   },
   
-  delete: async (endpoint) => {
+  delete: async (endpoint, body = null) => {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'DELETE'
-      });
+      const options = {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json'
+        }
+      };
+      
+      if (body) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
       
       const result = await response.json();
       

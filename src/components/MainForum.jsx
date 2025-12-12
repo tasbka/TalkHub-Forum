@@ -8,10 +8,9 @@ import { TopicDetailPage } from './TopicDetailPage';
 import { CreateTopicPage } from './CreateTopicPage';
 import { Button } from './ui/button';                 
 import { Plus } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import noteService from '../services/noteService';
 import { UserProfilePage } from './UserProfilePage';
-
+import { useState, useEffect, useCallback } from 'react';
 
 function MainForum({ onLogout, currentUser }) {
   const [topics, setTopics] = useState([]);
@@ -21,89 +20,65 @@ function MainForum({ onLogout, currentUser }) {
   const [showTopicDetail, setShowTopicDetail] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
-   useEffect(() => {
-    loadTopics();
-  }, []);
-
-  const loadTopics = async () => {
-     try {
-    setLoading(true);
-    const notes = await noteService.getAllNotes();
-    
-    console.log('Загруженные темы с сервера (сырые):', notes);
-    
-    // Проверяем, что notes существует и это массив
-    if (notes && Array.isArray(notes)) {
-      const formattedTopics = notes.map(note => {
-        // Отладочная информация
-        console.log('Обработка темы:', note);
-        
-        // Нормализуем данные - проверяем разные варианты имен полей
-        const topic = {
-          id: note.id || note.Id || note.NoteId,
-          title: note.title || note.Title || 'Без названия',
-          category: note.category || note.Category || note.categoryName || 'API Docs',
-          author: note.author || note.Author || note.authorName || note.UserName || 'Аноним',
-          replies: note.replies || note.Replies || note.commentCount || note.CommentCount || 0,
-          views: note.views || note.Views || 0,
-          likes: note.likes || note.Likes || 0,
-          timestamp: formatTimestamp(note.timestamp || note.Timestamp || note.createdAt || note.CreatedAt),
-          isPinned: note.isPinned || note.IsPinned || false,
-          isSolved: note.isSolved || note.IsSolved || false,
-          content: note.content || note.Content || '',
-          avatar: getAvatar(note.author || note.Author || note.authorName || note.UserName)
-        };
-        
-        return topic;
-      });
+  const loadTopics = useCallback(async () => {
+    try {
+      setLoading(true);
+      const notes = await noteService.getAllNotes();
+      
+      console.log('Загруженные темы с сервера (сырые):', notes);
+      
+      if (notes && Array.isArray(notes)) {
+        const formattedTopics = notes.map(note => {
+          console.log('Обработка темы:', note);
+          
+          const topic = {
+            id: note.id || note.Id || note.NoteId,
+            title: note.title || note.Title || 'Без названия',
+            category: note.category || note.Category || note.categoryName || 'API Docs',
+            author: note.author || note.Author || note.authorName || note.UserName || 'Аноним',
+            replies: note.replies || note.Replies || note.commentCount || note.CommentCount || 0,
+            views: note.views || note.Views || 0,
+            likes: note.likes || note.Likes || 0,
+            timestamp: formatTimestamp(note.timestamp || note.Timestamp || note.createdAt || note.CreatedAt),
+            isPinned: note.isPinned || note.IsPinned || false,
+            isSolved: note.isSolved || note.IsSolved || false,
+            content: note.content || note.Content || '',
+            avatar: getAvatar(note.author || note.Author || note.authorName || note.UserName)
+          };
+          
+          return topic;
+        });
       
       console.log('Все отформатированные темы:', formattedTopics);
-      setTopics(formattedTopics);
-    } else {
-      console.warn('Нет тем или неверный формат ответа:', notes);
-      // Покажем тестовые данные для отладки
-      const testTopics = [
-        {
-          id: '1',
-          title: 'Как правильно использовать REST API аутентификацию?',
-          category: 'API Docs',
-          author: 'Александра К.',
-          replies: 3,
-          views: 1250,
-          likes: 42,
-          timestamp: '2 часа назад',
-          isPinned: true,
-          isSolved: true,
-          content: 'Обсуждение лучших практик для REST API аутентификации...',
-          avatar: '👩‍💻'
-        },
-        {
-          id: '2',
-          title: 'Вопрос по Entity Framework Core',
-          category: 'Базы данных',
-          author: 'Иван М.',
-          replies: 5,
-          views: 890,
-          likes: 28,
-          timestamp: '5 часов назад',
-          isPinned: false,
-          isSolved: false,
-          content: 'Помогите разобраться с миграциями...',
-          avatar: '👨‍💻'
-        }
-      ];
-      console.log('Используем тестовые темы:', testTopics);
-      setTopics(testTopics);
+        setTopics(formattedTopics);
+      } else {
+        console.warn('Нет тем или неверный формат ответа:', notes);
+        // Можно оставить тестовые данные или убрать
+        setTopics([]);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки тем:', error);
+      setTopics([]);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Ошибка загрузки тем:', error);
-    setTopics([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  }, []); // Пустой массив зависимостей
 
-const formatTimestamp = (timestamp) => {
+  // Загружаем темы при монтировании
+  useEffect(() => {
+    loadTopics();
+  }, [loadTopics]);
+
+  // ДОБАВЬТЕ: Автоматическая перезагрузка при возврате на главную
+  useEffect(() => {
+    // Если мы на главной (не на других страницах), загружаем темы
+    if (!showTopicDetail && !showCreateTopic && !showUserProfile) {
+      loadTopics();
+    }
+  }, [showTopicDetail, showCreateTopic, showUserProfile, loadTopics]);
+
+  // Остальные функции без изменений
+  const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'Недавно';
   
   // Если это строка ISO формата
@@ -133,7 +108,7 @@ const formatTimestamp = (timestamp) => {
     return avatars[index];
   };
 
-  const handleCreateTopic = async (newTopicData) => {
+ const handleCreateTopic = async (newTopicData) => {
     try {
       console.log('Создание темы:', newTopicData);
       const topicWithAuthor = {
@@ -144,6 +119,7 @@ const formatTimestamp = (timestamp) => {
       
       await noteService.createNote(topicWithAuthor);
       
+      // Автоматически обновляем темы после создания
       await loadTopics();
       
       setShowCreateTopic(false);
@@ -175,7 +151,10 @@ const formatTimestamp = (timestamp) => {
     return (
       <UserProfilePage
         username={currentUser?.username || 'Пользователь'}
-        onBack={() => setShowUserProfile(false)}
+        onBack={() => {
+          setShowUserProfile(false);
+          loadTopics(); // ДОБАВЬТЕ ЭТУ СТРОКУ
+        }}
       />
     );
   }
@@ -202,16 +181,19 @@ const handleAddComment = async (comment) => {
  
 // TopicDetailPage
 if (showTopicDetail && selectedTopic) {
-  return (
-    <TopicDetailPage
-      topic={selectedTopic}
-      onBack={() => setShowTopicDetail(false)}
-      onAddComment={handleAddComment}
-      onLogout={onLogout} 
-      currentUser={currentUser}
-    />
-  );
-}
+    return (
+      <TopicDetailPage
+        topic={selectedTopic}
+        onBack={() => {
+          setShowTopicDetail(false);
+          loadTopics(); // ДОБАВЬТЕ ЭТУ СТРОКУ
+        }}
+        onAddComment={handleAddComment}
+        onLogout={onLogout} 
+        currentUser={currentUser}
+      />
+    );
+  }
   if (showTopicDetail && selectedTopic) {
     return (
       <TopicDetailPage
@@ -225,9 +207,12 @@ if (showTopicDetail && selectedTopic) {
   if (showCreateTopic) {
     return (
       <CreateTopicPage
-        onBack={() => setShowCreateTopic(false)}
+        onBack={() => {
+          setShowCreateTopic(false);
+          loadTopics(); // ДОБАВЬТЕ ЭТУ СТРОКУ
+        }}
         onSubmit={handleCreateTopic}
-         currentUser={currentUser}
+        currentUser={currentUser}
       />
     );
   }
@@ -267,7 +252,8 @@ if (showTopicDetail && selectedTopic) {
                 >
                   <ForumTopic 
                     {...topic}
-                    onCommentsClick={handleCommentsClick} // обработчик
+                    onCommentsClick={handleCommentsClick} 
+                      currentUserId={currentUser?.id}
                   />
                 </div>
               ))}
