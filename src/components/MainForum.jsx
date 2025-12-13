@@ -11,6 +11,7 @@ import { Plus } from 'lucide-react';
 import noteService from '../services/noteService';
 import { UserProfilePage } from './UserProfilePage';
 import { useState, useEffect, useCallback } from 'react';
+import { ContactPage } from './ContactPage';
 
 function MainForum({ onLogout, currentUser }) {
   const [topics, setTopics] = useState([]);
@@ -19,6 +20,7 @@ function MainForum({ onLogout, currentUser }) {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [showTopicDetail, setShowTopicDetail] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
 
   const loadTopics = useCallback(async () => {
     try {
@@ -62,26 +64,23 @@ function MainForum({ onLogout, currentUser }) {
     } finally {
       setLoading(false);
     }
-  }, []); // Пустой массив зависимостей
+  }, []); 
 
-  // Загружаем темы при монтировании
+
   useEffect(() => {
     loadTopics();
   }, [loadTopics]);
 
-  // ДОБАВЬТЕ: Автоматическая перезагрузка при возврате на главную
   useEffect(() => {
-    // Если мы на главной (не на других страницах), загружаем темы
     if (!showTopicDetail && !showCreateTopic && !showUserProfile) {
       loadTopics();
     }
   }, [showTopicDetail, showCreateTopic, showUserProfile, loadTopics]);
 
-  // Остальные функции без изменений
   const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'Недавно';
   
-  // Если это строка ISO формата
+
   if (typeof timestamp === 'string' && timestamp.includes('T')) {
     try {
       const date = new Date(timestamp);
@@ -130,6 +129,16 @@ function MainForum({ onLogout, currentUser }) {
     }
   };
 
+  const handleContactsClick = () => {
+  setShowContacts(true);
+};
+if (showContacts) {
+  return (
+    <ContactPage
+      onBack={() => setShowContacts(false)}
+    />
+  );
+}
   //  клик по всей теме
   const handleTopicClick = (topic) => {
     setSelectedTopic(topic);
@@ -178,7 +187,32 @@ const handleAddComment = async (comment) => {
   }
 };
 
- 
+const handleDeleteTopic = async (topicId) => {
+   try {
+    setTopics(prevTopics => prevTopics.filter(topic => topic.id !== topicId));
+    console.log(`Тема ${topicId} удалена из списка`);
+
+  } catch (error) {
+    console.error('Ошибка при удалении темы:', error);
+    alert('Ошибка при удалении темы: ' + error.message);
+  }
+};
+const handleTogglePin = async (topicId, isPinned) => {
+  try {
+    // Обновляем тему в локальном состоянии
+    setTopics(prevTopics => 
+      prevTopics.map(topic => 
+        topic.id === topicId 
+          ? { ...topic, isPinned } 
+          : topic
+      )
+    );
+    console.log(`Тема ${topicId} ${isPinned ? 'закреплена' : 'откреплена'}`);
+  } catch (error) {
+    console.error('Ошибка при закреплении темы:', error);
+  }
+};
+
 // TopicDetailPage
 if (showTopicDetail && selectedTopic) {
     return (
@@ -219,8 +253,7 @@ if (showTopicDetail && selectedTopic) {
 
   return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
-      <ForumHeader onLogout={onLogout} currentUser={currentUser}  onProfileClick={handleProfileClick} /> {/* Передаем currentUser */}
-      
+      <ForumHeader onLogout={onLogout} currentUser={currentUser}  onProfileClick={handleProfileClick}   onContactsClick={handleContactsClick}/> 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Sidebar Left */}
@@ -245,18 +278,21 @@ if (showTopicDetail && selectedTopic) {
             
             <div className="space-y-4">
             {topics.map((topic) => (
-                <div 
-                  key={topic.id} 
-                  onClick={() => handleTopicClick(topic)}
-                  className="cursor-pointer hover:scale-[1.01] transition-transform"
-                >
-                  <ForumTopic 
-                    {...topic}
-                    onCommentsClick={handleCommentsClick} 
-                      currentUserId={currentUser?.id}
-                  />
-                </div>
-              ))}
+  <div 
+    key={topic.id} 
+    onClick={() => handleTopicClick(topic)}
+    className="cursor-pointer hover:scale-[1.01] transition-transform"
+  >
+    <ForumTopic 
+      {...topic}
+      onCommentsClick={handleCommentsClick}
+      currentUserId={currentUser?.id}
+      currentUserRole={currentUser?.role || 'Novice'}
+      onDeleteTopic={handleDeleteTopic}
+      onTogglePin={handleTogglePin}
+    />
+  </div>
+))}
             </div>
           </div>
           

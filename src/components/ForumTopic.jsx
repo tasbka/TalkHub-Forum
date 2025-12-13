@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import likeService from '../services/likeService';
-
+import noteService from '../services/noteService';
 
 export function ForumTopic({
   id,
@@ -14,21 +14,27 @@ export function ForumTopic({
   isPinned,
   isSolved,
   avatar,
-   onCommentsClick,
-    currentUserId
+  onCommentsClick,
+  currentUserId,
+  currentUserRole,
+  onDeleteTopic,
+  onTogglePin 
 }) {
 
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pinning, setPinning] = useState(false);
 
-  // Проверяем, лайкнул ли текущий пользователь тему
+ const isAdmin = currentUserRole === 'Admin' || currentUserRole === 'Moderator';
+  
+ // Проверяем, лайкнул ли текущий пользователь тему
     useEffect(() => {
     if (currentUserId && id) {
-      // Проверяем сервер
       checkIfLiked();
       
-      // А также проверяем localStorage для мгновенного отображения
       const cachedLikeCount = localStorage.getItem(`topic_${id}_likes`);
       const cachedIsLiked = localStorage.getItem(`topic_${id}_user_${currentUserId}_liked`);
       
@@ -47,14 +53,11 @@ export function ForumTopic({
   try {
     const response = await likeService.checkIfLiked(id, currentUserId);
     
-    // Обрабатываем оба формата
     if (response.success !== undefined) {
-      // Новый формат
       if (response.success) {
         setIsLiked(response.data?.isLiked ?? false);
       }
     } else {
-      // Старый формат
       setIsLiked(response.isLiked ?? false);
     }
   } catch (error) {
@@ -104,8 +107,43 @@ const handleLikeToggle = async (e) => {
     setIsLoading(false);
   }
 };
-   const handleCommentsClick = (e) => {
-    e.stopPropagation(); // Останавливаем всплытие события
+
+
+ const handleDeleteTopic = async (e) => {
+   e.stopPropagation();
+
+    if (!window.confirm(`Вы уверены, что хотите удалить тему "${title}"?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await noteService.deleteNote(id);
+      
+      if (response.success) {
+        alert('Тема успешно удалена');
+        if (onDeleteTopic) {
+          onDeleteTopic(id);
+        }
+      } else {
+        alert('Ошибка при удалении темы: ' + (response.message || 'Неизвестная ошибка'));
+      }
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+      alert('Ошибка при удалении темы: ' + (error.message || 'Неизвестная ошибка'));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+    const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleCommentsClick = (e) => {
+    e.stopPropagation();
     if (onCommentsClick) {
       onCommentsClick({ 
         id, title, author, category, views, timestamp, 
@@ -114,10 +152,50 @@ const handleLikeToggle = async (e) => {
     }
   };
 
-  const handleTopicClick = () => {
-  }
+ const handleTopicClick = (e) => {
+     if (e.target.closest('.admin-controls')) {
+      return;
+     }
+  };
+
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-border">
+    <div 
+      className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-border relative">
+      {/* Кнопки для админов - ВНЕШНИЙ КОНТЕЙНЕР */}
+      {isAdmin && (
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+  
+          {/* Кнопка удаления */}
+          {showDeleteConfirm ? (
+            <div className="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-200">
+              <button
+                onClick={handleDeleteTopic}
+                disabled={isDeleting}
+                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? 'Удаление...' : 'Удалить'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition-colors"
+              >
+                Отмена
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleDeleteClick}
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+              title="Удалить тему"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+      
       <div className="flex items-start gap-3">
         <div className="text-2xl">{avatar}</div>
         
@@ -136,6 +214,11 @@ const handleLikeToggle = async (e) => {
             <span className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded">
               {category}
             </span>
+            {isAdmin && (
+              <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                👑 Админ
+              </span>
+            )}
           </div>
           
           <h3 className="text-lg font-medium text-foreground mb-2 hover:text-primary transition-colors">
@@ -148,7 +231,7 @@ const handleLikeToggle = async (e) => {
               <span>🕒 {timestamp}</span>
             </div>
             <div className="flex items-center gap-4">
-            <button 
+              <button 
                 onClick={handleCommentsClick}
                 className="flex items-center gap-1 hover:text-purple-700 transition-colors focus:outline-none"
                 title="Перейти к комментариям"
@@ -157,7 +240,7 @@ const handleLikeToggle = async (e) => {
                 <span>{replies}</span>
               </button>
 
-             <button 
+              <button 
                 onClick={handleLikeToggle}
                 disabled={isLoading || !currentUserId}
                 className={`flex items-center gap-1 transition-colors focus:outline-none ${

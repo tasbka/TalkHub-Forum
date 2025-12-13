@@ -276,12 +276,11 @@ export function TopicDetailPage({ topic, onBack, onAddComment, onLogout, current
 
           <div className="mt-4 pt-4 border-t-2 border-purple-100 flex items-center gap-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Eye className="h-4 w-4 text-pink-400" />
-              <span>{topic.views} {/*  просмотров*/}</span>
+              <span>{/*topic.views*/} {/*  просмотров*/}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MessageSquare className="h-4 w-4 text-purple-400" />
-              <span>{comments.length} комментариев</span>
+              <span>{comments.length} {/*  комментариев*/}</span>
             </div>
           </div>
         </div>

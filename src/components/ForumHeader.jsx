@@ -1,4 +1,6 @@
-export function ForumHeader({ onLogout, currentUser, onProfileClick  }) {
+import { MessageCircle } from 'lucide-react';
+
+export function ForumHeader({ onLogout, currentUser, onProfileClick, onContactsClick  }) {
   return (
  <header className="bg-white shadow-sm border-b border-purple-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -14,7 +16,13 @@ export function ForumHeader({ onLogout, currentUser, onProfileClick  }) {
             
             {currentUser && (
                 <div className="flex items-center gap-3"> 
-                {/* Кнопка профиля */}
+                {/* Кнопка профиля и контактов*/}
+          <button 
+                onClick={onContactsClick}
+                className="flex items-center gap-1.5 text-gray-700 hover:text-purple-700"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </button>
                 <button 
                   onClick={onProfileClick}
                   className="flex items-center gap-1.5 text-gray-700 hover:text-purple-700"

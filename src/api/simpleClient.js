@@ -53,7 +53,8 @@ const simpleClient = {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+         credentials: 'include'
       });
       
       console.log(`POST response status: ${response.status}`);
@@ -79,12 +80,13 @@ const simpleClient = {
   },
   
   delete: async (endpoint, body = null) => {
-    try {
+  try {
       const options = {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json'
-        }
+        },
+        credentials: 'include'
       };
       
       if (body) {
@@ -103,6 +105,30 @@ const simpleClient = {
       return result;
     } catch (error) {
       console.error(`DELETE ${endpoint} error:`, error);
+      throw error;
+    }
+  },
+
+  patch: async (endpoint, body) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP error ${response.status}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`PATCH ${endpoint} error:`, error);
       throw error;
     }
   }

@@ -4,7 +4,7 @@ const authService = {
     register: async (userData) => {
         try {
             const response = await simpleClient.post('/users/register', userData);
-            localStorage.setItem('user', JSON.stringify(response.data.data));
+           localStorage.setItem('user', JSON.stringify(response.data.data || response.data));
             return response.data;
         } catch (error) {
             throw error;
@@ -13,16 +13,39 @@ const authService = {
 
    login: async (credentials) => {
         try {
-            const response = await simpleClient.post('/users/login', credentials);
-            localStorage.setItem('user', JSON.stringify(response.data.data));
-            return response.data;
+              const response = await fetch('http://localhost:5234/api/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(credentials),
+                credentials: 'include' // ВАЖНО: для отправки cookies
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || `HTTP error ${response.status}`);
+            }
+            
+            localStorage.setItem('user', JSON.stringify(result.data));
+            return result;
         } catch (error) {
             throw error;
         }
     },
 
-    logout: () => {
-        localStorage.removeItem('user');
+    logout: async () => {
+        try {
+            // Также с credentials для logout
+            await fetch('http://localhost:5234/api/users/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } finally {
+            localStorage.removeItem('user');
+        }
     },
     
     getCurrentUser: () => {
@@ -32,6 +55,8 @@ const authService = {
         try {
             const user = JSON.parse(userStr);
 
+            let userData = {};
+
             if (user.id) {
                 return user;
             } else if (user.userId) {
@@ -40,6 +65,10 @@ const authService = {
                 return user.user;
             } else if (user.data && user.data.id) {
                 return user.data;
+            }
+
+               if (!userData.role) {
+                userData.role = 'Novice'; // Значение по умолчанию
             }
             
             console.warn('Не удалось найти id пользователя:', user);
@@ -62,6 +91,11 @@ const authService = {
     getCurrentUsername: () => {
         const user = authService.getCurrentUser();
         return user?.username || user?.userName || user?.name;
+    },
+
+       getCurrentUserRole: () => {
+        const user = authService.getCurrentUser();
+        return user?.role || 'Novice';
     }
 };
 

@@ -169,6 +169,73 @@ const noteService = {
             console.error('Ошибка загрузки заметки:', error);
             return null;
         }
+    },
+deleteNote: async (noteId) => {
+  try {
+    console.log(`Удаление темы с ID: ${noteId}`);
+    
+    // Используем простой fetch для отладки
+    const response = await fetch(`http://localhost:5234/api/note/${noteId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        // Добавляем токен из localStorage если есть
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      }
+    });
+    
+    console.log('Status:', response.status, response.statusText);
+    
+    // Получаем текст ответа
+    const text = await response.text();
+    console.log('Raw response text (first 500 chars):', text.substring(0, 500));
+    
+    // Проверяем, это JSON или HTML
+    if (text.includes('<!DOCTYPE html>') || text.includes('<html>')) {
+      console.error('Server returned HTML error page');
+      throw new Error('Сервер вернул страницу с ошибкой. Проверьте логи сервера.');
     }
+    
+    // Пробуем распарсить JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (jsonError) {
+      console.error('JSON parse error. Full text:', text);
+      throw new Error(`Сервер вернул невалидный JSON: ${text.substring(0, 200)}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Ошибка удаления темы:', error);
+    throw error;
+  }
+},
+
+     togglePinNote: async (noteId, isPinned) => {
+    try {
+      const response = await simpleClient.patch(`/note/${noteId}/pin`, { isPinned });
+      
+      if (response.success !== undefined) {
+        if (response.success) {
+          return {
+            success: true,
+            message: response.message || (isPinned ? 'Тема закреплена' : 'Тема откреплена')
+          };
+        } else {
+          throw new Error(response.message || 'Ошибка при закреплении темы');
+        }
+      } else {
+        return {
+          success: true,
+          message: isPinned ? 'Тема закреплена' : 'Тема откреплена'
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка закрепления темы:', error);
+      throw error;
+    }
+  }
 };
 export default noteService;
