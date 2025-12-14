@@ -19,7 +19,6 @@ export function CreateTopicPage({ onBack, onSubmit, currentUser }) { // Доба
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.title && formData.content && formData.category) {
-      // Добавляем информацию о пользователе
       const topicData = {
         ...formData,
         authorId: currentUser?.id,

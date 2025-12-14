@@ -84,7 +84,7 @@ export function ActiveUsers() {
               
               <div className="flex-shrink-0">
                 <span className="text-sm font-semibold text-purple-600">
-                  +{user.reputation}
+                  {/*+{user.reputation}*/}
                 </span>
               </div>
             </div>

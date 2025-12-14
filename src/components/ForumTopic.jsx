@@ -18,7 +18,7 @@ export function ForumTopic({
   currentUserId,
   currentUserRole,
   onDeleteTopic,
-  onTogglePin 
+
 }) {
 
   const [isLiked, setIsLiked] = useState(false);
@@ -26,11 +26,11 @@ export function ForumTopic({
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [pinning, setPinning] = useState(false);
+ 
 
  const isAdmin = currentUserRole === 'Admin' || currentUserRole === 'Moderator';
   
- // Проверяем, лайкнул ли текущий пользователь тему
+ // лайкнул ли текущий пользователь тему
     useEffect(() => {
     if (currentUserId && id) {
       checkIfLiked();
@@ -90,7 +90,6 @@ const handleLikeToggle = async (e) => {
         setIsLiked(isLikedNow);
         setLikeCount(newLikeCount);
         
-        // Сохраняем в localStorage для кеширования
         localStorage.setItem(`topic_${id}_likes`, newLikeCount.toString());
         localStorage.setItem(`topic_${id}_user_${currentUserId}_liked`, isLikedNow.toString());
         
@@ -164,7 +163,6 @@ const handleLikeToggle = async (e) => {
       {/* Кнопки для админов - ВНЕШНИЙ КОНТЕЙНЕР */}
       {isAdmin && (
         <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
-  
           {/* Кнопка удаления */}
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-200">

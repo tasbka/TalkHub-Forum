@@ -7,7 +7,7 @@ import { ActiveUsers } from './ActiveUsers';
 import { TopicDetailPage } from './TopicDetailPage';
 import { CreateTopicPage } from './CreateTopicPage';
 import { Button } from './ui/button';                 
-import { Plus } from 'lucide-react';
+import { Plus, CheckCircle, X } from 'lucide-react';
 import noteService from '../services/noteService';
 import { UserProfilePage } from './UserProfilePage';
 import { useState, useEffect, useCallback } from 'react';
@@ -21,6 +21,12 @@ function MainForum({ onLogout, currentUser }) {
   const [showTopicDetail, setShowTopicDetail] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+
+const [notification, setNotification] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
 
   const loadTopics = useCallback(async () => {
     try {
@@ -55,7 +61,6 @@ function MainForum({ onLogout, currentUser }) {
         setTopics(formattedTopics);
       } else {
         console.warn('Нет тем или неверный формат ответа:', notes);
-        // Можно оставить тестовые данные или убрать
         setTopics([]);
       }
     } catch (error) {
@@ -76,6 +81,16 @@ function MainForum({ onLogout, currentUser }) {
       loadTopics();
     }
   }, [showTopicDetail, showCreateTopic, showUserProfile, loadTopics]);
+
+ useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'Недавно';
@@ -118,14 +133,23 @@ function MainForum({ onLogout, currentUser }) {
       
       await noteService.createNote(topicWithAuthor);
       
-      // Автоматически обновляем темы после создания
+      setNotification({
+        show: true,
+        message: 'Тема успешно опубликована!',
+        type: 'success'
+      });
+      
       await loadTopics();
       
       setShowCreateTopic(false);
       
     } catch (error) {
       console.error('Ошибка создания темы:', error);
-      alert('Не удалось создать тему: ' + (error.message || error));
+      setNotification({
+        show: true,
+        message: 'Не удалось опубликовать тему: ' + (error.message || error),
+        type: 'error'
+      });
     }
   };
 
@@ -155,7 +179,7 @@ if (showContacts) {
     setShowUserProfile(true);
   };
 
-  // Проверка на показ страницы профиля - ДОБАВЬТЕ этот блок
+  // Проверка на показ страницы профиля
   if (showUserProfile) {
     return (
       <UserProfilePage
@@ -199,7 +223,6 @@ const handleDeleteTopic = async (topicId) => {
 };
 const handleTogglePin = async (topicId, isPinned) => {
   try {
-    // Обновляем тему в локальном состоянии
     setTopics(prevTopics => 
       prevTopics.map(topic => 
         topic.id === topicId 
@@ -220,7 +243,7 @@ if (showTopicDetail && selectedTopic) {
         topic={selectedTopic}
         onBack={() => {
           setShowTopicDetail(false);
-          loadTopics(); // ДОБАВЬТЕ ЭТУ СТРОКУ
+          loadTopics();
         }}
         onAddComment={handleAddComment}
         onLogout={onLogout} 
@@ -234,6 +257,26 @@ if (showTopicDetail && selectedTopic) {
         topic={selectedTopic}
         onBack={() => setShowTopicDetail(false)}
         onAddComment={handleAddComment}
+      />
+    );
+  }
+
+  // Закрыть уведомление вручную
+  const closeNotification = () => {
+    setNotification({ ...notification, show: false });
+  };
+
+  if (showTopicDetail && selectedTopic) {
+    return (
+      <TopicDetailPage
+        topic={selectedTopic}
+        onBack={() => {
+          setShowTopicDetail(false);
+          loadTopics();
+        }}
+        onAddComment={handleAddComment}
+        onLogout={onLogout} 
+        currentUser={currentUser}
       />
     );
   }
@@ -253,6 +296,38 @@ if (showTopicDetail && selectedTopic) {
 
   return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
+       {/* Уведомление - фиксированное положение вверху */}
+      {notification.show && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down w-full max-w-md`}>
+          <div className={`rounded-xl p-4 shadow-lg border-2 backdrop-blur-sm ${
+            notification.type === 'success' 
+              ? 'bg-gradient-to-r from-green-100 to-emerald-100 border-emerald-300 text-emerald-800' 
+              : 'bg-gradient-to-r from-red-100 to-pink-100 border-red-300 text-red-800'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                {notification.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />
+                ) : (
+                  <X className="h-5 w-5 mr-3 text-red-600" />
+                )}
+                <div>
+                  <p className="font-semibold">
+                    {notification.type === 'success' ? 'Успешно!' : 'Ошибка!'}
+                  </p>
+                  <p className="text-sm">{notification.message}</p>
+                </div>
+              </div>
+              <button 
+                onClick={closeNotification}
+                className="ml-4 hover:opacity-70 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ForumHeader onLogout={onLogout} currentUser={currentUser}  onProfileClick={handleProfileClick}   onContactsClick={handleContactsClick}/> 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-12 gap-6">
