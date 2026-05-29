@@ -1,14 +1,18 @@
 // src/components/Comment.jsx
-import { Reply } from 'lucide-react';
+import { Reply, Trash2 } from 'lucide-react';
 
 export function Comment({
-  author,
+   author,
   content,
   timestamp,
   avatar = '👤',
   isAuthor = false,
-  onReply
+  isAdmin = false,
+  onReply,
+  onDelete
 }) {
+ const canDelete = isAuthor || isAdmin;
+
   return (
     <div className="bg-white/80 rounded-xl p-5 border-2 border-purple-200 hover:shadow-md transition-all">
       <div className="flex gap-4">
@@ -29,6 +33,17 @@ export function Comment({
               )}
               <span className="text-xs text-gray-500">{timestamp}</span>
             </div>
+            
+            {/* Кнопка удаления */}
+            {canDelete && onDelete && (
+              <button
+                onClick={onDelete}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                title="Удалить комментарий"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <p className="text-sm text-gray-700 mb-3 whitespace-pre-wrap">{content}</p>

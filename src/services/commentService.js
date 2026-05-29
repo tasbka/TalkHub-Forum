@@ -11,7 +11,7 @@ const commentService = {
   // Создать комментарий
   async createComment(commentData) {
     const result = await simpleClient.post('/comments', commentData);
-    return result.data; // Возвращаем data из ответа
+    return result.data; 
   },
   
   // Ответить на комментарий
@@ -31,10 +31,15 @@ const commentService = {
   },
   
   // Удалить комментарий
-  async deleteComment(commentId) {
-    const result = await simpleClient.delete(`/comments/${commentId}`);
-    return result.success;
-  },
+ deleteComment: async (commentId) => {
+  try {
+    const response = await simpleClient.delete(`/comments/${commentId}`);
+    return response;
+  } catch (error) {
+    console.error('Ошибка удаления комментария:', error);
+    throw error;
+  }
+},
   
   // Получить ответы на комментарий
   async getReplies(commentId) {

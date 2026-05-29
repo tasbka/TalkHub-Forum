@@ -1,20 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import statsService from '../services/statsService';
-import { Users, MessageSquare, FileText, UserPlus } from 'lucide-react';
+import { Users, MessageSquare, FileText } from 'lucide-react';
 
-export function ForumStats() {
+export const ForumStats = forwardRef((props, ref) => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalTopics: 0,
     totalReplies: 0,
     todayTopics: 0,
-    todayUsers: 0
+    todayUsers: 0,
+    todayReplies: 0
   });
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStats();
-  }, []);
 
   const loadStats = async () => {
     try {
@@ -27,6 +24,14 @@ export function ForumStats() {
       setLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    loadStats
+  }));
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   if (loading) {
     return (
@@ -73,6 +78,11 @@ export function ForumStats() {
               <p className="text-2xl font-bold">{stats.totalReplies}</p>
             </div>
           </div>
+          {stats.todayReplies > 0 && (
+            <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              +{stats.todayReplies} сегодня
+            </span>
+          )}
         </div>
         
         <div className="flex items-center justify-between">
@@ -94,4 +104,4 @@ export function ForumStats() {
       </div>
     </div>
   );
-}
+});

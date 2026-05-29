@@ -30,8 +30,7 @@ const statsService = {
   async getActiveUsers(count = 4) {
     try {
       const response = await simpleClient.get(`/stats/active-users?count=${count}`);
-      
-      // Проверяем все возможные структуры ответа
+   
       const data = response?.data?.data || response?.data || response;
       
       // Убеждаемся, что это массив

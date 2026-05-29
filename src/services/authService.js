@@ -1,26 +1,36 @@
 import simpleClient from '../api/simpleClient';
 
+
 const authService = {
     register: async (userData) => {
         try {
             const response = await simpleClient.post('/users/register', userData);
-           localStorage.setItem('user', JSON.stringify(response.data.data || response.data));
             return response.data;
         } catch (error) {
             throw error;
         }
     },
 
-   login: async (credentials) => {
+updateUserPostCount: () => {
+    const user = authService.getCurrentUser();
+    if (user) {
+        user.postCount = (user.postCount || 0) + 1;
+        localStorage.setItem('user', JSON.stringify(user));
+        return user;
+    }
+    return null;
+},
+
+    login: async (credentials) => {
         try {
-              const response = await fetch('http://localhost:5234/api/users/login', {
+            const response = await fetch('http://localhost:5234/api/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify(credentials),
-                credentials: 'include' // ВАЖНО: для отправки cookies
+                credentials: 'include'
             });
             
             const result = await response.json();
@@ -29,7 +39,25 @@ const authService = {
                 throw new Error(result.message || `HTTP error ${response.status}`);
             }
             
-            localStorage.setItem('user', JSON.stringify(result.data));
+            console.log('Login response data:', result.data);
+            console.log('Role from backend:', result.data.role, typeof result.data.role);
+            
+            const userData = {
+                id: result.data.id,
+                username: result.data.username,
+                email: result.data.email,
+                role: result.data.role,  
+                postCount: result.data.postCount || 0,
+                commentCount: result.data.commentCount || 0,
+                reputation: result.data.reputation || 0,
+                experiencePoints: result.data.experiencePoints || 0,
+                createdAt: result.data.createdAt,
+                isActive: result.data.isActive ?? true
+
+            };
+
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('Сохраненный пользователь:', userData);
             return result;
         } catch (error) {
             throw error;
@@ -38,7 +66,6 @@ const authService = {
 
     logout: async () => {
         try {
-            // Также с credentials для logout
             await fetch('http://localhost:5234/api/users/logout', {
                 method: 'POST',
                 credentials: 'include'
@@ -54,25 +81,8 @@ const authService = {
         
         try {
             const user = JSON.parse(userStr);
-
-            let userData = {};
-
-            if (user.id) {
-                return user;
-            } else if (user.userId) {
-                return { ...user, id: user.userId };
-            } else if (user.user && user.user.id) {
-                return user.user;
-            } else if (user.data && user.data.id) {
-                return user.data;
-            }
-
-               if (!userData.role) {
-                userData.role = 'Novice'; // Значение по умолчанию
-            }
-            
-            console.warn('Не удалось найти id пользователя:', user);
-            return null;
+            console.log('getCurrentUser - parsed user:', user);
+            return user;
         } catch (e) {
             console.error('Ошибка парсинга пользователя:', e);
             return null;
@@ -83,20 +93,46 @@ const authService = {
         return !!localStorage.getItem('user');
     },
 
-        getCurrentUserId: () => {
+    getCurrentUserId: () => {
         const user = authService.getCurrentUser();
         return user?.id;
     },
 
     getCurrentUsername: () => {
         const user = authService.getCurrentUser();
-        return user?.username || user?.userName || user?.name;
+        return user?.username;
     },
 
-       getCurrentUserRole: () => {
+    getCurrentUserRole: () => {
         const user = authService.getCurrentUser();
-        return user?.role || 'Novice';
+        console.log('getCurrentUserRole:', user?.role);
+        return user?.role || 'Новичок';  
+    },
+    
+    isAdmin: () => {
+        const role = authService.getCurrentUserRole();
+        return role === 'Администратор'; 
+    },
+
+    updateUserStats: (updates) => {
+    const user = authService.getCurrentUser();
+    if (user) {
+        const updatedUser = { ...user, ...updates };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
     }
+    return null;
+},
+
+incrementPostCount: () => {
+    const user = authService.getCurrentUser();
+    if (user) {
+        user.postCount = (user.postCount || 0) + 1;
+        localStorage.setItem('user', JSON.stringify(user));
+        return user;
+    }
+    return null;
+}
 };
 
 export default authService;
